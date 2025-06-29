@@ -28,6 +28,13 @@ Proceed responsibly and lawfully.
 
 ---
 
+## 🔧 Features
+
+- Avoid using `obfuscator-io-deobfuscator` and implement deobfuscator inside this repo.
+- Make it good looking...
+
+---
+
 ## 🛠️ Requirements
 
 - Node.js
