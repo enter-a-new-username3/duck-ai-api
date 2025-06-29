@@ -28,9 +28,10 @@ Proceed responsibly and lawfully.
 
 ---
 
-## 🔧 Features
+## 🔧 TODO
 
 - Avoid using `obfuscator-io-deobfuscator` and implement deobfuscator inside this repo.
+- Avoid using `JSDOM`
 - Make it good looking...
 
 ---
