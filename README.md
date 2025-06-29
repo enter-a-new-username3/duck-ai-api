@@ -31,7 +31,7 @@ Proceed responsibly and lawfully.
 ## 🛠️ Requirements
 
 - Node.js
-- External CLI tool: `obfuscator-io-deobfuscator` must be available in your system PATH.
+- External CLI tool: `obfuscator-io-deobfuscator` must be available in your system PATH. Also you need to modify it to allow source code as command line parameter.
 
 ---
 
