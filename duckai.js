@@ -4,44 +4,34 @@ const { spawnSync } = require("child_process");
 const { JSDOM } = require('jsdom');
 const { createHash } = require('crypto');
 
-
-
-
-function deobfuscateScript(script) {
-	const process = spawnSync("cmd", ["/c", "obfuscator-io-deobfuscator", script, "-o", "124", "-s"]);
-	const output = process.stdout.toString();
-	return output;
-}
-
-
-function getHashes(vqdHash) {
+async function getHashes(vqdHash) {
 	const jsScript = Buffer.from(vqdHash, 'base64').toString('utf-8');
-	const deobfuscated = deobfuscateScript(jsScript);
+	const dom = new JSDOM(`<iframe id="jsa" sandbox="allow-scripts allow-same-origin" srcdoc="<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Security-Policy"; content="default-src 'none'; script-src 'unsafe-inline'">
+</head>
+<body></body>
+</html>" style="position: absolute; left: -9999px; top: -9999px;"></iframe>`, { runScripts: "dangerously" });
+	if (jsScript.includes("jsa")) console.log(true);
+	//console.log(jsScript);
+	dom.window.top.__DDG_BE_VERSION__ = 1;
+	dom.window.top.__DDG_FE_CHAT_HASH__ = 1;
+	var jsa = dom.window.top.document.querySelector("#jsa");
+	var contentDoc = jsa.contentDocument || jsa.contentWindow.document;
 
-	const htmlItem = eval(deobfuscated.split('.innerHTML = ')[1].split(';')[0])
-	const constant_number = parseInt(deobfuscated.split('return String(')[1].split(" ")[0], 16);
+	var meta = contentDoc.createElement("meta");
+	meta.setAttribute("http-equiv", "Content-Security-Policy");
+	meta.setAttribute("content", "default-src 'none'; script-src 'unsafe-inline';");
+	contentDoc.head.appendChild(meta)
+	var result = await dom.window.eval(jsScript);
 	
-	const dom = new JSDOM();
-	const el = dom.window.document.createElement("div");
-	el.innerHTML = htmlItem;
-
-	const clientHashes = [
-		'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"Not)A;Brand";v="8", "Chromium";v="138", "Brave";v="138"',
-		(constant_number + el.innerHTML.length * el.querySelectorAll("*").length).toString()
-	].map((t) => createHash("sha256").update(t).digest("base64"));
-	var emptyClientHash = deobfuscated.replace(/'client_hashes':\s*\[[\s\S]*?\],/, `'client_hashes': [],`);
-
-	var finalObject = eval(emptyClientHash);
-	finalObject.client_hashes = clientHashes;
-	finalObject.meta.origin = "https://duckduckgo.com";
-	finalObject.meta.stack = "Error\nat ue (https://duckduckgo.com/dist/wpm.chat.0ea649b4eccc96d608ac.js:1:23715)\nat async https://duckduckgo.com/dist/wpm.chat.0ea649b4eccc96d608ac.js:1:25902";
-	finalObject.meta.duration = "6";
-
-	return btoa(JSON.stringify(finalObject));
+	result.client_hashes[0] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+	result.client_hashes = result.client_hashes.map((t) => createHash("sha256").update(t).digest("base64"))
+	return btoa(JSON.stringify(result));
 }
 
 (async () => {
-	try {
 		var headers = {
 			'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
 			'accept-language': 'en-US,en;q=0.9',
@@ -79,7 +69,7 @@ function getHashes(vqdHash) {
 				'x-vqd-accept': '1',
 			}
 		});
-		const vqdHash = getHashes(statusRes.headers["x-vqd-hash-1"]);
+		const vqdHash = await getHashes(statusRes.headers["x-vqd-hash-1"]);
 
 		headers = {
 			"accept": "text/event-stream",
@@ -105,7 +95,7 @@ function getHashes(vqdHash) {
 		const chatRes = await axios.post(
 			"https://duckduckgo.com/duckchat/v1/chat",
 			{
-			  model: 'gpt-4o-mini',
+			  model: 'claude-3-5-haiku-latest',
 			  metadata: {
 				toolChoice: {
 				  NewsSearch: false,
@@ -134,7 +124,5 @@ function getHashes(vqdHash) {
 			})
 		  }
 		
-	} catch (err) {
-		console.error("Error:", err.message || err);
-	}
+	
 })();
