@@ -105,9 +105,9 @@ async function getHashes(vqdHash) {
 				}
 			  },
 			  messages: [ {
-         "content" : "hello",
-         "role" : "user"
-      } ],
+				 "content" : "hello",
+				 "role" : "user"
+			  } ],
 			  canUseTools: true
 			},
 			{headers: headers, responseType: 'stream', adapter: "fetch"},
@@ -117,12 +117,10 @@ async function getHashes(vqdHash) {
 			const { value, done } = await reader.read();
 			if (done) break;
 			value.split("\n").forEach((line) => {
-				if (!line.length || line === "data: [DONE]") return
+				if (!line.length || line === "data: [DONE]" || line.startsWith("data: [CHAT_TITLE")) return // parse here if you want chat title. im lazy and idgaf
 				var object = JSON.parse(line.substr(6))
 				if (object.message)
 					process.stdout.write(object.message)
 			})
 		  }
-		
-	
 })();
